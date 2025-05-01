@@ -29,6 +29,53 @@ src/
 - REST API endpoints for chat functionality
 - Long-context conversations with history management
 
+## Refactored Architecture
+
+The backend has been refactored to follow best practices for maintainability, scalability, and reusability:
+
+### Core Module
+
+The core module (`src/core`) provides shared functionality used throughout the application:
+
+- **Configuration Management**: Centralized environment variable handling via NestJS ConfigService
+- **Logging Service**: Custom logger service with context support
+- **Redis Cache**: Configured Redis store for caching
+- **Interfaces**: Common interfaces that define contracts for implementation
+
+### Feature Modules
+
+The application is organized into feature modules:
+
+- **GeminiModule**: Handles communication with Google's Gemini AI model
+- **McpModule**: Implements the Model Context Protocol (MCP) integration
+- **ChatHistoryModule**: Manages chat sessions and message history
+
+#### Chat History Module Structure
+
+The Chat History module has been refactored to improve maintainability:
+
+```
+chat-history/
+├── chat-history.controller.ts  # REST API endpoints for chat history
+├── chat-history.module.ts      # Module definition
+├── chat-history.service.ts     # Business logic for managing chat history
+└── dto/                        # Data Transfer Objects
+    ├── add-message.dto.ts      # DTO for adding messages
+    ├── create-chat-session.dto.ts  # DTO for creating chat sessions
+    ├── generate-title.dto.ts   # DTO for title generation
+    ├── index.ts                # Barrel exports
+    └── update-title.dto.ts     # DTO for updating titles
+```
+
+Each DTO includes validation rules with class-validator decorators and Swagger documentation annotations.
+
+### Architecture Benefits
+
+- **Maintainability**: Clear separation of concerns with focused modules
+- **Scalability**: Properly isolated services with dependency injection
+- **Reusability**: Interfaces and abstractions enable easy extension
+- **Error Handling**: Consistent error management across services
+
 ## Getting Started
 
 ### Prerequisites
@@ -48,6 +95,8 @@ src/
    ```
    PORT=3000
    GEMINI_API_KEY=your_gemini_api_key
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
    ```
 
 ### Running the Application
@@ -61,6 +110,92 @@ npm run build
 npm run start:prod
 ```
 
+## Docker Deployment
+
+### Prerequisites
+
+- Docker and Docker Compose installed on your server
+- Port 3001 available for the backend API
+
+### Deployment Steps
+
+1. Clone this repository:
+   ```bash
+   git clone <your-backend-repo-url>
+   cd katalon-bot-backend
+   ```
+
+2. Configure environment variables:
+   - Create a `.env` file in the root directory with your configuration
+   - Example:
+     ```
+     # Backend environment variables
+     NODE_ENV=production
+     
+     # Redis configuration
+     REDIS_HOST=redis
+     REDIS_PORT=6379
+     REDIS_PASSWORD=
+     REDIS_TLS=false
+     
+     # API configuration
+     PORT=3001
+     
+     # External service credentials
+     GEMINI_API_KEY=your_gemini_api_key
+     ```
+
+3. Deploy with Docker Compose:
+   ```bash
+   # Build and start the containers
+   docker-compose up -d
+   
+   # If you need to rebuild from scratch
+   docker-compose down
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+
+4. Verify the deployment:
+   ```bash
+   docker-compose ps
+   ```
+
+### Configuration
+
+- The backend API will be available at: `http://your-server-ip:3001`
+- Redis data is persisted in a Docker volume named `redis-data`
+- Environment variables can be modified by editing the `.env` file and restarting the containers
+
+### Stopping the Service
+
+```bash
+docker-compose down
+```
+
+To remove volumes as well:
+```bash
+docker-compose down -v
+```
+
+### Viewing Logs
+
+```bash
+docker-compose logs -f
+```
+
+### Deployment on Cloud Platforms
+
+When deploying to cloud platforms, you'll need to:
+
+1. Configure separate Redis instance or use a managed Redis service
+2. Set environment variables according to your platform's guidelines
+3. Ensure proper networking between your backend and Redis services
+
+## API Documentation
+
+- API documentation is available at: `http://your-server-ip:3001/api`
+
 ## API Endpoints
 
 ### Gemini Endpoint
@@ -73,8 +208,12 @@ npm run start:prod
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| PORT | Port number for the server | 3000 |
+| PORT | Port number for the server | 3001 |
 | GEMINI_API_KEY | API key for Google's Gemini API | - |
+| REDIS_HOST | Redis server host | localhost |
+| REDIS_PORT | Redis server port | 6379 |
+| REDIS_PASSWORD | Redis server password | - |
+| REDIS_TLS | Whether to use TLS for Redis connection | false |
 
 ## Development
 
@@ -89,78 +228,6 @@ npm run test:e2e
 npm run lint
 ```
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ npm install
-```
-
-## Compile and run the project
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is licensed under the MIT License - see the LICENSE file for details.

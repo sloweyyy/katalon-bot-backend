@@ -7,5 +7,6 @@ import { GeminiModule } from '../gemini/gemini.module';
   imports: [GeminiModule],
   controllers: [McpController],
   providers: [McpService],
+  exports: [McpService],
 })
 export class McpModule {}
