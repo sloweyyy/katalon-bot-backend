@@ -84,48 +84,67 @@ export class McpService {
       'mcp-remote',
       'https://poc-docs-mcp-server.daohoangson.workers.dev/sse',
     ]);
-    const timeout = this.configService.get<number>('mcp.timeout', 300000);
-
-    const client = await this.createMcpClient(command, args, timeout);
+    const timeout = this.configService.get<number>('mcp.timeout', 600000);
 
     try {
-      const mcpTools = await this.getMcpTools(client);
+      const client = await this.createMcpClient(command, args, timeout);
 
-      if (history) {
-        this.sessionStore[sessionId] = [...history];
-      } else if (!this.sessionStore[sessionId]) {
-        this.sessionStore[sessionId] = [];
+      try {
+        const mcpTools = await this.getMcpTools(client);
+
+        if (history) {
+          this.sessionStore[sessionId] = [...history];
+        } else if (!this.sessionStore[sessionId]) {
+          this.sessionStore[sessionId] = [];
+        }
+
+        this.sessionStore[sessionId].push({
+          role: 'user',
+          parts: [{ text: message }],
+        });
+
+        const response = await this.geminiService.generateChatContent(
+          this.sessionStore[sessionId],
+          mcpTools,
+          systemInstruction,
+        );
+
+        const resultText = await this.processGeminiResponse(client, response);
+
+        this.sessionStore[sessionId].push({
+          role: 'model',
+          parts: [{ text: resultText }],
+        });
+
+        return { answer: resultText };
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Error in MCP processing: ${errorMessage}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+
+        return this.handleMcpFailure(sessionId, message, systemInstruction);
+      } finally {
+        await client.close().catch((err) => {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          const errorStack = err instanceof Error ? err.stack : undefined;
+          this.logger.error(
+            `Error closing MCP client: ${errorMessage}`,
+            errorStack,
+          );
+        });
       }
-
-      this.sessionStore[sessionId].push({
-        role: 'user',
-        parts: [{ text: message }],
-      });
-
-      const response = await this.geminiService.generateChatContent(
-        this.sessionStore[sessionId],
-        mcpTools,
-        systemInstruction,
-      );
-
-      const resultText = await this.processGeminiResponse(client, response);
-
-      this.sessionStore[sessionId].push({
-        role: 'model',
-        parts: [{ text: resultText }],
-      });
-
-      return { answer: resultText };
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Error in askMcp: ${errorMessage}`,
+        `Error creating MCP client: ${errorMessage}`,
         error instanceof Error ? error.stack : undefined,
       );
-      throw error;
-    } finally {
-      await client.close();
+
+      return this.handleMcpFailure(sessionId, message, systemInstruction);
     }
   }
 
@@ -239,5 +258,19 @@ export class McpService {
       );
       return `Error calling tool ${functionCall.name}: ${errorMessage}`;
     }
+  }
+
+  private async handleMcpFailure(
+    sessionId: string,
+    message: string,
+    systemInstruction?: string,
+  ): Promise<AiChatResponse> {
+    this.logger.log('Falling back to Gemini API due to MCP failure');
+
+    const fallbackInstruction = systemInstruction
+      ? `${systemInstruction}\n\nNote: The Katalon knowledge base is currently unavailable. Please provide general information based on your training.`
+      : 'The Katalon knowledge base is currently unavailable. Please provide general information based on your training.';
+
+    return this.askGemini(sessionId, message, fallbackInstruction);
   }
 }

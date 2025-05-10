@@ -2,32 +2,30 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { McpService } from './mcp.service';
 import { AskMcpDto } from './dto/ask-mcp.dto';
 import { AskGeminiDto } from './dto/ask-gemini.dto';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiBody 
-} from '@nestjs/swagger';
+
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('chat')
 @Controller('mcp')
 export class McpController {
   constructor(private readonly mcpService: McpService) {}
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Send a message to Gemini API',
-    description: 'Process a user message through the Gemini API and return a response',
+    description:
+      'Process a user message through the Gemini API and return a response',
   })
   @ApiBody({ type: AskGeminiDto })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Message processed successfully',
     schema: {
       type: 'object',
       properties: {
         answer: {
           type: 'string',
-          example: 'To set up a test case in Katalon Studio, you need to start by creating a new project...',
+          example:
+            'To set up a test case in Katalon Studio, you need to start by creating a new project...',
         },
       },
     },
@@ -46,20 +44,22 @@ export class McpController {
     );
   }
 
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Send a message to MCP',
-    description: 'Process a user message through the Model Context Protocol to provide Katalon-specific responses',
+    description:
+      'Process a user message through the Model Context Protocol to provide Katalon-specific responses',
   })
   @ApiBody({ type: AskMcpDto })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Message processed successfully',
     schema: {
       type: 'object',
       properties: {
         answer: {
           type: 'string',
-          example: 'In Katalon Studio, you can create a new test case by following these steps...',
+          example:
+            'In Katalon Studio, you can create a new test case by following these steps...',
         },
       },
     },

@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Cache } from '@nestjs/cache-manager';
 import { LoggerService } from '../core/services/logger.service';
 import {
   ChatSession,
