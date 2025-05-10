@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Controller, Post, Body } from '@nestjs/common';
 import { McpService } from './mcp.service';
 import { AskMcpDto } from './dto/ask-mcp.dto';

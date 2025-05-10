@@ -84,10 +84,9 @@ export class McpService {
       'mcp-remote',
       'https://poc-docs-mcp-server.daohoangson.workers.dev/sse',
     ]);
-    const timeout = this.configService.get<number>('mcp.timeout', 600000);
 
     try {
-      const client = await this.createMcpClient(command, args, timeout);
+      const client = await this.createMcpClient(command, args);
 
       try {
         const mcpTools = await this.getMcpTools(client);
@@ -151,7 +150,6 @@ export class McpService {
   private async createMcpClient(
     command: string,
     args: string[],
-    timeout: number,
   ): Promise<Client> {
     try {
       const serverParams = new StdioClientTransport({
@@ -163,7 +161,7 @@ export class McpService {
         name: 'katalon-support-bot',
         version: '1.0.0',
         transport: serverParams,
-        timeout,
+        timeout: 0,
       });
 
       await client.connect(serverParams);

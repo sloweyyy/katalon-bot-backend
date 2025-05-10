@@ -17,8 +17,8 @@ import configuration from './config/configuration';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         return {
-          ttl: configService.get<number>('redis.ttl', 60 * 60 * 24 * 7), // 7 days default
-          max: 100, // maximum number of items in cache
+          ttl: configService.get<number>('redis.ttl', 60 * 60 * 24 * 7),
+          max: 100,
         };
       },
     }),
